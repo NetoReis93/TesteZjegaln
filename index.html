@@ -10304,7 +10304,21 @@ async function exportAppLog() {
 
     let downloadSuccess = false;
 
-    // Método 0: Web Share API com arquivo — abre o menu NATIVO de
+    // Método 0: ponte nativa Median, quando o wrapper disponibiliza shareFile.
+    addAppLog(`Ponte Median shareFile disponível: ${typeof (window.median?.share?.shareFile) === 'function'}`, 'info');
+    if (isAndroidApp && !downloadSuccess) {
+        try {
+            const nativeOk = await tryMedianNativeFileShare(blob, fileName, 'Log BTC Stack');
+            if (nativeOk) {
+                downloadSuccess = true;
+                addAppLog('✓ Exportação de log via ponte nativa Median acionada!', 'success');
+            }
+        } catch (nativeErr) {
+            addAppLog(`Ponte nativa Median falhou: ${nativeErr.message || nativeErr}`, 'warn');
+        }
+    }
+
+    // Método 1: Web Share API com arquivo — abre o menu NATIVO de
     // compartilhamento do Android/iOS (Arquivos, Google Drive, WhatsApp,
     // e-mail, Bluetooth etc). Testado antes do Service Worker porque os
     // logs mostraram que o interceptador nativo de download do Median não
@@ -10342,7 +10356,7 @@ async function exportAppLog() {
             const swOk = await trySwNativeDownload(blob, fileName);
             if (swOk) {
                 downloadSuccess = true;
-                addAppLog('✓ Exportação de log — Service Worker + Content-Disposition: clique disparado', 'success');
+                addAppLog('✓ Exportação de log — Service Worker acionado; aguardando gerenciador nativo…', 'success');
             }
         } catch (swErr) {
             addAppLog(`Exportação de log — Service Worker + Content-Disposition falhou: ${swErr.message}`, 'warn');
@@ -10459,27 +10473,81 @@ async function exportAppLog() {
 // Retorna true só se conseguiu entregar o arquivo ao SW e disparar a
 // navegação; não há como confirmar que o usuário concluiu o salvamento
 // a partir daqui (o sistema assume esse controle).
+/**
+ * Exportação por ponte nativa do Median, quando o wrapper disponibiliza
+ * shareFile. Alguns builds Android não expõem navigator.share, mas expõem
+ * a ponte JavaScript do app. O arquivo é entregue como data: URL para não
+ * depender de Blob URLs ou de uma requisição externa.
+ */
+async function tryMedianNativeFileShare(blob, fileName, title) {
+    const median = window.median;
+    const shareFile = median && median.share && median.share.shareFile;
+    if (typeof shareFile !== 'function') return false;
+
+    try {
+        const dataUrl = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onerror = () => reject(reader.error || new Error('Falha ao converter arquivo'));
+            reader.onload = () => resolve(reader.result);
+            reader.readAsDataURL(blob);
+        });
+
+        // Formato documentado/mais comum da ponte Median para arquivo.
+        await Promise.resolve(shareFile.call(median.share, {
+            url: dataUrl,
+            filename: fileName,
+            title: title || fileName,
+            mimeType: blob.type || 'application/octet-stream'
+        }));
+        return true;
+    } catch (e) {
+        addAppLog(`Ponte nativa Median falhou: ${e.message || e}`, 'warn');
+        return false;
+    }
+}
+
 async function trySwNativeDownload(blob, fileName) {
     if (!('serviceWorker' in navigator)) return false;
-    const controller = navigator.serviceWorker.controller;
+
+    // Garante que estamos usando um Service Worker que realmente controla
+    // esta página. Se a instalação acabou de acontecer, tenta atualizar/
+    // assumir o controle antes de desistir.
+    let controller = navigator.serviceWorker.controller;
+    if (!controller) {
+        try {
+            const registration = await navigator.serviceWorker.getRegistration();
+            if (registration) {
+                await registration.update().catch(() => {});
+                if (registration.active && !navigator.serviceWorker.controller) {
+                    registration.active.postMessage({ type: 'CLAIM_CLIENT' });
+                }
+            }
+        } catch (e) {}
+        controller = navigator.serviceWorker.controller;
+    }
     if (!controller) return false;
 
     let registration;
     try { registration = await navigator.serviceWorker.getRegistration(); } catch (e) {}
-
     const buffer = await blob.arrayBuffer();
-    const token  = 'dl' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+    const token = 'dl' + Date.now().toString(36) + Math.random().toString(36).slice(2);
 
     const stored = await new Promise((resolve) => {
         const channel = new MessageChannel();
-        const timeout = setTimeout(() => resolve(false), 1500);
+        const timeout = setTimeout(() => resolve(false), 2500);
         channel.port1.onmessage = (e) => {
             clearTimeout(timeout);
             resolve(!!(e.data && e.data.ok));
         };
         try {
             controller.postMessage(
-                { type: 'STORE_BLOB_FOR_DOWNLOAD', token, fileName, mimeType: blob.type, buffer },
+                {
+                    type: 'STORE_BLOB_FOR_DOWNLOAD',
+                    token,
+                    fileName,
+                    mimeType: blob.type || 'application/octet-stream',
+                    buffer
+                },
                 [buffer, channel.port2]
             );
         } catch (e) {
@@ -10489,21 +10557,32 @@ async function trySwNativeDownload(blob, fileName) {
     });
     if (!stored) return false;
 
-    const base  = (registration && registration.scope) || (location.origin + location.pathname.replace(/[^/]*$/, ''));
-    const dlUrl = base.replace(/\/?$/, '/') + '__dl__/' + token + '/' + encodeURIComponent(fileName);
+    const base = (registration && registration.scope) ||
+        (location.origin + location.pathname.replace(/[^/]*$/, ''));
+    const dlUrl = base.replace(/\/?$/, '/') +
+        '__dl__/' + token + '/' + encodeURIComponent(fileName);
 
-    // IMPORTANTE: usa um clique de <a> na janela principal, não um
-    // <iframe> escondido. O gerenciador nativo de download do Android
-    // (e do wrapper Median) só entra em ação para navegações da janela
-    // principal — um iframe carrega a resposta silenciosamente e não
-    // aciona o download nenhum, mesmo com o Content-Disposition correto.
+    // Em WebViews Android, o atributo download em uma URL controlada por SW
+    // pode impedir que o WebView trate a navegação como um download nativo.
+    // Fazemos uma navegação de nível superior. O SW devolve
+    // Content-Disposition: attachment, permitindo ao gerenciador nativo do
+    // wrapper/Android interceptar a resposta.
     const a = document.createElement('a');
     a.href = dlUrl;
-    a.download = fileName; // reforça "salvar", não "navegar/abrir"
+    a.target = '_self';
+    a.rel = 'noopener';
     a.style.display = 'none';
     document.body.appendChild(a);
+
+    // Não informa "sucesso do download" aqui. O chamador só deve considerar
+    // este método como acionado; se o WebView não possuir interceptador
+    // nativo, a página pode sair da navegação. Isso é preferível a declarar
+    // falsamente que o arquivo foi salvo.
     a.click();
-    setTimeout(() => { try { document.body.removeChild(a); } catch (e) {} }, 3000);
+
+    setTimeout(() => {
+        try { document.body.removeChild(a); } catch (e) {}
+    }, 5000);
 
     return true;
 }
@@ -10568,6 +10647,22 @@ async function backupExport() {
         
         let downloadSuccess = false;
 
+        // Método 0: ponte nativa Median (quando disponível).
+        // É preferível ao Service Worker porque entrega o arquivo diretamente
+        // ao código nativo do aplicativo, sem depender do DownloadListener.
+        addAppLog(`Ponte Median shareFile disponível: ${typeof (window.median?.share?.shareFile) === 'function'}`, 'info');
+        if (isAndroidApp && !downloadSuccess) {
+            try {
+                const nativeOk = await tryMedianNativeFileShare(blob, fileName, 'Backup BTC Stack');
+                if (nativeOk) {
+                    downloadSuccess = true;
+                    addAppLog('✓ Exportação via ponte nativa Median acionada!', 'success');
+                }
+            } catch (nativeErr) {
+                addAppLog(`Ponte nativa Median falhou: ${nativeErr.message || nativeErr}`, 'warn');
+            }
+        }
+
         // Método 1: Web Share API com arquivo — no Android empacotado pelo
         // Median.co, é isso que abre a tela nativa "Salvar em…" (Arquivos,
         // Google Drive, etc). Testado ANTES do Service Worker porque os
@@ -10608,7 +10703,7 @@ async function backupExport() {
                 const swOk = await trySwNativeDownload(blob, fileName);
                 if (swOk) {
                     downloadSuccess = true;
-                    addAppLog('✓ Service Worker + Content-Disposition: clique disparado (verifique se o Android abriu uma tela/notificação de download — isso não confirma que salvou)', 'success');
+                    addAppLog('✓ Service Worker acionado; aguardando gerenciador nativo do Android…', 'success');
                 } else {
                     addAppLog('Service Worker não disponível/controlando a página, tentando outro método…', 'warn');
                 }

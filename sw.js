@@ -197,6 +197,7 @@ self.addEventListener('fetch', event => {
 
 self.addEventListener('message', event => {
     if (event.data === 'skipWaiting' || event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+    if (event.data?.type === 'CLAIM_CLIENT') self.clients.claim();
     if (event.data === 'clearApiCache') {
         caches.delete(API_CACHE).then(() =>
             event.source?.postMessage({ type: 'apiCacheCleared' })
