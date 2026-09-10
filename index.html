@@ -3382,6 +3382,11 @@ html.theme-light .dca-result-card { background: #fff; }
                 <span id="bk-strength-label"></span>
             </div>
             <div id="bk-export-error" style="color:var(--red);font-size:.8rem;min-height:16px;margin-top:4px;"></div>
+            <p style="font-family:var(--font-display);font-size:.72rem;color:#555;line-height:1.5;margin:0;">
+                Se o download não aparecer no seu dispositivo, o conteúdo do backup também é copiado
+                automaticamente para a área de transferência — é só colar em um app de Notas,
+                Google Keep, e-mail ou WhatsApp para si mesmo, e guardar por lá.
+            </p>
             <div class="modal-actions" style="margin-top:4px">
                 <button class="btn-secondary" onclick="closeBackupModal()">Cancelar</button>
                 <button class="btn-primary" onclick="backupExport()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Exportar Backup</button>
@@ -10302,6 +10307,19 @@ async function exportAppLog() {
     const fileName = `btc-stack-log-${todayLocalStr()}.txt`;
     const isAndroidApp = /android/i.test(navigator.userAgent);
 
+    // Cópia para a área de transferência primeiro — independente do wrapper
+    // Median, funciona como rede de segurança mesmo se os métodos de
+    // download abaixo falharem silenciosamente (ver mesma lógica no export
+    // de backup).
+    let clipboardOk = false;
+    try {
+        await navigator.clipboard.writeText(content);
+        clipboardOk = true;
+        addAppLog('✓ Log também copiado para a área de transferência.', 'success');
+    } catch (clipErr) {
+        addAppLog(`Cópia do log para área de transferência falhou: ${clipErr.message || clipErr}`, 'warn');
+    }
+
     let downloadSuccess = false;
 
     // Método 0: ponte nativa Median, quando o wrapper disponibiliza shareFile.
@@ -10454,7 +10472,10 @@ async function exportAppLog() {
 
     if (downloadSuccess) {
         addAppLog('Log exportado pelo usuário.', 'info');
-        showToast('✓ Log exportado!', 'success');
+        showToast(clipboardOk ? '✓ Log exportado! (também copiado para a área de transferência)' : '✓ Log exportado!', 'success');
+    } else if (clipboardOk) {
+        addAppLog('⚠️ Download do log falhou, mas cópia para área de transferência funcionou.', 'warn');
+        showToast('Download falhou, mas o log foi copiado para a área de transferência — cole em Notas/e-mail para guardar.', 'success');
     } else {
         addAppLog('⚠️ Nenhum método de exportação de log funcionou.', 'error');
         showToast('Não foi possível exportar o log. Verifique permissões.', 'error');
@@ -10644,7 +10665,24 @@ async function backupExport() {
         } else {
             addAppLog('Plataforma: Desktop/Web', 'info');
         }
-        
+
+        // Cópia para a área de transferência SEMPRE é tentada primeiro, e de
+        // forma independente dos métodos de "download" abaixo. Isso não
+        // depende de nenhuma configuração do wrapper Median (Downloads
+        // Directory, File Download etc.) — é uma API web padrão — então
+        // funciona mesmo quando o Median não está entregando o arquivo de
+        // fato. Serve como rede de segurança garantida: o usuário pode colar
+        // o conteúdo em Notas, Google Keep, e-mail, WhatsApp para si mesmo,
+        // etc., mesmo se todo o resto abaixo falhar silenciosamente.
+        let clipboardOk = false;
+        try {
+            await navigator.clipboard.writeText(payload);
+            clipboardOk = true;
+            addAppLog('✓ Backup também copiado para a área de transferência.', 'success');
+        } catch (clipErr) {
+            addAppLog(`Cópia para área de transferência falhou: ${clipErr.message || clipErr}`, 'warn');
+        }
+
         let downloadSuccess = false;
 
         // Método 0: ponte nativa Median (quando disponível).
@@ -10807,20 +10845,29 @@ async function backupExport() {
 
         if (!downloadSuccess) {
             addAppLog('⚠️ Nenhum método de download funcionou. Verifique permissões.', 'error');
-            err.textContent = 'Nenhum método de download disponível. Verifique permissões no Median.co.';
+            if (clipboardOk) {
+                err.textContent = 'O download automático falhou, mas o backup foi copiado para a área de transferência — cole em um app de Notas, Google Keep ou e-mail para guardar.';
+            } else {
+                err.textContent = 'Nenhum método de download nem a cópia para a área de transferência funcionaram. Verifique permissões no Median.co.';
+            }
         } else {
             addAppLog('Download iniciado com sucesso!', 'success');
         }
 
         closeBackupModal();
         const vendasSuffix = vendas.length > 0 ? ` e ${vendas.length} saída(s)` : '';
-        const toastMsg = `✓ Backup exportado com ${aportes.length} aporte(s)${vendasSuffix}!`;
-        
+        let toastMsg = `✓ Backup exportado com ${aportes.length} aporte(s)${vendasSuffix}!`;
+        if (!downloadSuccess && clipboardOk) {
+            toastMsg = `Backup copiado para a área de transferência (${aportes.length} aporte(s)${vendasSuffix}) — cole em Notas/e-mail/nuvem para guardar.`;
+        } else if (downloadSuccess && clipboardOk) {
+            toastMsg += ' (também copiado para a área de transferência)';
+        }
+
         if (isAndroidApp) {
             addAppLog('📱 Verifique pasta Downloads ou notificação de download', 'info');
         }
         
-        showToast(toastMsg, 'success');
+        showToast(toastMsg, downloadSuccess || clipboardOk ? 'success' : 'error');
         
     } catch(e) {
         err.textContent = 'Erro ao exportar: ' + e.message;
