@@ -2619,7 +2619,6 @@ textarea.profile-input { resize: none; min-height: 68px; line-height: 1.5; font-
 .sort-icon.desc { opacity: 1; color: var(--btc); }
 
 
-
 .edit-modal-overlay {
     position: fixed; inset: 0; background: rgba(0,0,0,.8);
     display: flex; align-items: center; justify-content: center;
@@ -3342,81 +3341,139 @@ html.theme-light .dca-result-card { background: #fff; }
 
 
 <div class="modal-overlay hidden" id="backup-modal-overlay">
-    <div class="modal" style="max-width:480px;gap:14px;">
+    <div class="modal" style="max-width:520px;gap:14px;">
         <div class="modal-title"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Backup de Dados</div>
-        <p class="modal-sub">Exporte um arquivo <strong>.btcbak</strong> criptografado com sua senha ou importe um backup anterior.</p>
-
+        <p class="modal-sub">No Android, use o <strong>código criptografado</strong>, sem depender do Median. No navegador, o <strong>.btcbak</strong> continua disponível e o JSON também pode ser exportado.</p>
 
         <div style="display:flex;gap:0;background:var(--surface2);border:1px solid var(--border2);border-radius:10px;overflow:hidden;">
             <button id="bktab-export" onclick="backupShowTab('export')"
                 style="flex:1;padding:9px;border:none;cursor:pointer;font-family:var(--font-display);font-size:.82rem;font-weight:700;transition:all .2s;background:var(--btc-dim);color:var(--btc);">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Exportar
+                Exportar
             </button>
             <button id="bktab-import" onclick="backupShowTab('import')"
                 style="flex:1;padding:9px;border:none;cursor:pointer;font-family:var(--font-display);font-size:.82rem;font-weight:700;transition:all .2s;background:transparent;color:#666;">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar
+                Importar
             </button>
         </div>
 
-
         <div id="bk-export-section">
-            <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;">
-                O backup é cifrado com <strong style="color:#bbb">AES-256-GCM + PBKDF2</strong> usando a senha abaixo.
-                Guarde a senha com segurança — sem ela o arquivo não pode ser restaurado.
+            <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;margin-bottom:8px;">
+                Escolha o formato do backup. <strong style="color:#bbb">O código criptografado é recomendado.</strong>
             </p>
+            <div style="display:flex;gap:8px;margin-bottom:12px;">
+                <button id="bk-format-code" type="button" onclick="backupSetExportFormat('code')" style="flex:1;text-align:left;padding:11px 12px;border:1px solid var(--btc);border-radius:10px;background:var(--btc-dim);color:var(--text);cursor:pointer;font-family:var(--font-display);">
+                    <strong style="display:block;color:var(--btc);font-size:.84rem;">🔐 Código criptografado</strong>
+                    <span style="display:block;color:#888;font-size:.7rem;line-height:1.35;margin-top:3px;">AES-256-GCM + PBKDF2 · recomendado no Android</span>
+                </button>
+                <button id="bk-format-json" type="button" onclick="backupSetExportFormat('json')" style="flex:1;text-align:left;padding:11px 12px;border:1px solid var(--border2);border-radius:10px;background:transparent;color:var(--text);cursor:pointer;font-family:var(--font-display);">
+                    <strong style="display:block;color:#bbb;font-size:.84rem;">📄 Arquivo JSON</strong>
+                    <span style="display:block;color:#888;font-size:.7rem;line-height:1.35;margin-top:3px;">Formato aberto · não criptografado</span>
+                </button>
+            </div>
+            <div id="bk-code-export-fields">
+                <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;">
+                    O código é compactado antes da criptografia e protegido com <strong style="color:#bbb">AES-256-GCM + PBKDF2</strong>. Guarde o código e a senha em locais seguros.
+                </p>
             <label class="nostr-label">Senha do backup</label>
             <div style="position:relative">
                 <input id="bk-export-pass1" type="password" class="nostr-input" placeholder="Crie uma senha forte…" autocomplete="new-password"
                     style="padding-right:44px" oninput="backupStrengthUpdate()">
                 <button type="button" onclick="backupToggleVis('bk-export-pass1')"
-                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-11 8-11 8z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
             <div style="position:relative;margin-top:8px">
                 <input id="bk-export-pass2" type="password" class="nostr-input" placeholder="Confirme a senha…" autocomplete="new-password"
                     style="padding-right:44px">
                 <button type="button" onclick="backupToggleVis('bk-export-pass2')"
-                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-11 8-11 8z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
             <div class="lpass-strength" id="bk-strength-row" style="display:none;margin-top:6px">
                 <div class="lpass-strength-bar"><div class="lpass-strength-fill" id="bk-strength-fill"></div></div>
                 <span id="bk-strength-label"></span>
             </div>
             <div id="bk-export-error" style="color:var(--red);font-size:.8rem;min-height:16px;margin-top:4px;"></div>
-            <div class="modal-actions" style="margin-top:4px">
-                <button class="btn-secondary" onclick="closeBackupModal()">Cancelar</button>
-                <button class="btn-primary" onclick="backupExport()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>Exportar Backup</button>
+
+            </div>
+            <div id="bk-code-result" style="display:none;margin-top:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+                    <label class="nostr-label" style="margin:0;">Código de backup</label>
+                    <span id="bk-code-size" style="font-size:.72rem;color:#888;"></span>
+                </div>
+                <textarea id="bk-export-code" class="modal-textarea" readonly spellcheck="false"
+                    style="width:100%;min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.72rem;line-height:1.45;word-break:break-all;"></textarea>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn-secondary" style="flex:1" onclick="backupCopyCode()">Copiar código</button>
+                    <button class="btn-secondary" style="flex:1" onclick="backupSelectCode()">Selecionar tudo</button>
+                </div>
+                <div style="font-size:.72rem;color:#777;line-height:1.45;margin-top:8px;">
+                    Este código contém apenas dados criptografados. <strong style="color:#999">A senha continua sendo necessária para restaurar.</strong>
+                </div>
+            </div>
+
+            <div id="bk-json-result" style="display:none;margin-top:8px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
+                    <label class="nostr-label" style="margin:0;">Conteúdo do arquivo JSON</label>
+                    <span id="bk-json-size" style="font-size:.72rem;color:#888;"></span>
+                </div>
+                <textarea id="bk-export-json" class="modal-textarea" readonly spellcheck="false" style="width:100%;min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.7rem;line-height:1.4;word-break:break-all;"></textarea>
+                <div style="display:flex;gap:8px;margin-top:8px;">
+                    <button class="btn-secondary" style="flex:1" onclick="backupCopyJson()">Copiar JSON</button>
+                    <button class="btn-secondary" style="flex:1" onclick="backupDownloadJson()">Baixar .json</button>
+                </div>
+                <div style="font-size:.72rem;color:#d99b42;line-height:1.45;margin-top:8px;">Atenção: este arquivo <strong>não é criptografado</strong>. Guarde-o somente em local seguro.</div>
+            </div>
+
+            <div class="modal-actions" style="margin-top:8px">
+                <button class="btn-secondary" onclick="closeBackupModal()">Fechar</button>
+                <button id="bk-export-btn" class="btn-primary" onclick="backupExport()">Gerar Backup</button>
             </div>
         </div>
 
-
         <div id="bk-import-section" style="display:none">
-            <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;">
-                Selecione um arquivo <strong style="color:#bbb">.btcbak</strong> e informe a senha usada na exportação.
-            </p>
-            <div id="bk-drop-zone"
-                style="border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;color:#555;font-family:var(--font-display);font-size:.85rem;"
-                onclick="document.getElementById('bk-file-input').click()"
-                ondragover="event.preventDefault();this.style.borderColor='var(--btc)'"
-                ondragleave="this.style.borderColor='var(--border2)'"
-                ondrop="backupHandleDrop(event)">
-                <div style="font-size:2rem;margin-bottom:8px;opacity:.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
-                <div id="bk-drop-label">Clique ou arraste o arquivo .btcbak aqui</div>
+            <div style="display:flex;gap:0;background:var(--surface2);border:1px solid var(--border2);border-radius:9px;overflow:hidden;margin-bottom:10px;">
+                <button id="bk-import-code-tab" onclick="backupImportShowMode('code')"
+                    style="flex:1;padding:8px;border:none;cursor:pointer;font-family:var(--font-display);font-size:.78rem;font-weight:700;background:var(--btc-dim);color:var(--btc);">Código</button>
+                <button id="bk-import-file-tab" onclick="backupImportShowMode('file')"
+                    style="flex:1;padding:8px;border:none;cursor:pointer;font-family:var(--font-display);font-size:.78rem;font-weight:700;background:transparent;color:#666;">Arquivo (.btcbak / .json)</button>
             </div>
-            <input type="file" id="bk-file-input" accept=".btcbak,.json" style="display:none" onchange="backupFileSelected(this)">
+
+            <div id="bk-import-code-section">
+                <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;">
+                    Cole o código de backup gerado pelo BTC Stack.
+                </p>
+                <textarea id="bk-import-code" class="modal-textarea" spellcheck="false"
+                    placeholder="Cole aqui o código BTCSTACK-BACKUP-V2…" style="width:100%;min-height:150px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:.72rem;line-height:1.45;word-break:break-all;"></textarea>
+            </div>
+
+            <div id="bk-import-file-section" style="display:none">
+                <p style="font-family:var(--font-display);font-size:.82rem;color:#888;line-height:1.5;">
+                    Você pode restaurar um arquivo <strong style="color:#bbb">.btcbak</strong> criptografado ou um <strong style="color:#bbb">.json</strong> aberto.
+                </p>
+                <div id="bk-drop-zone"
+                    style="border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:border-color .2s;color:#555;font-family:var(--font-display);font-size:.85rem;"
+                    onclick="document.getElementById('bk-file-input').click()"
+                    ondragover="event.preventDefault();this.style.borderColor='var(--btc)'"
+                    ondragleave="this.style.borderColor='var(--border2)'"
+                    ondrop="backupHandleDrop(event)">
+                    <div style="font-size:2rem;margin-bottom:8px;opacity:.5"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg></div>
+                    <div id="bk-drop-label">Clique ou arraste o arquivo .btcbak ou .json aqui</div>
+                </div>
+                <input type="file" id="bk-file-input" accept=".btcbak,.json" style="display:none" onchange="backupFileSelected(this)">
+            </div>
+
             <label class="nostr-label" style="margin-top:12px;">Senha do backup</label>
             <div style="position:relative">
                 <input id="bk-import-pass" type="password" class="nostr-input" placeholder="Senha usada na exportação…" autocomplete="current-password"
                     style="padding-right:44px">
                 <button type="button" onclick="backupToggleVis('bk-import-pass')"
-                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                    style="position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;color:#555;cursor:pointer;font-size:1.1rem;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-11 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
             <div id="bk-import-error" style="color:var(--red);font-size:.8rem;min-height:16px;margin-top:4px;"></div>
             <div class="modal-actions" style="margin-top:4px">
                 <button class="btn-secondary" onclick="closeBackupModal()">Cancelar</button>
-                <button class="btn-primary" onclick="backupImport()"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-3px;margin-right:5px;flex-shrink:0"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Importar Backup</button>
+                <button class="btn-primary" onclick="backupImport()">Importar Backup</button>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -3507,7 +3564,7 @@ html.theme-light .dca-result-card { background: #fff; }
             <div class="onboarding-slide" data-step="4">
                 <div class="onboarding-icon"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 <div class="onboarding-title">Seus dados ficam no aparelho</div>
-                <p class="onboarding-text">Tudo é salvo localmente neste dispositivo — nenhum servidor seu guarda essas informações. Faça backups periódicos criptografados (.btcbak) em <strong>Mais → Backup</strong>, principalmente antes de trocar de celular.</p>
+                <p class="onboarding-text">Tudo é salvo localmente neste dispositivo — nenhum servidor seu guarda essas informações. Faça backups periódicos em <strong>Mais → Backup</strong>. No Android, prefira o código criptografado; também há opção de JSON.</p>
             </div>
         </div>
 
@@ -5001,9 +5058,6 @@ async function fetchPeriodChange(curCode, period) {
     let pct = null;
 
 
-
-
-
     try {
         const days = PERIOD_DAYS[period];
         const vs   = curCode.toLowerCase();
@@ -5019,8 +5073,6 @@ async function fetchPeriodChange(curCode, period) {
             }
         }
     } catch (e) {  }
-
-
 
 
     if (pct === null) {
@@ -5341,8 +5393,6 @@ function showConfirm(title, bodyFragment, buttons) {
         const actionsEl = document.getElementById('confirm-actions');
 
         titleEl.textContent = title;
-
-
 
 
         bodyEl.textContent = '';
@@ -5784,7 +5834,6 @@ function parseFiatInput(str) {
     if (str.includes(',') && !str.includes('.')) {
         return parseFloat(str.replace(',', '.'));
     }
-
 
 
     if (str.includes('.') && !str.includes(',')) {
@@ -7082,7 +7131,6 @@ function drawIndicatorChart(canvasId, values, opts) {
 async function fetchBinanceDailyKlines() {
 
 
-
     let closes = [];
     let startTime = 1502928000000;
     const now = Date.now();
@@ -7104,7 +7152,6 @@ async function fetchBinanceDailyKlines() {
 }
 
 async function fetchCoinGeckoDailyCloses() {
-
 
 
     const url = 'https://api.coingecko.com/api/v3/coins/bitcoin/market_chart?vs_currency=usd&days=365&precision=2';
@@ -7866,7 +7913,6 @@ function renderCycleIndicators(closes) {
     }
 
 
-
     const weekly = [];
     for (let i = lastIdx; i >= 0; i -= 7) weekly.push(closes[i]);
     weekly.reverse();
@@ -7889,7 +7935,6 @@ function renderCycleIndicators(closes) {
     } else {
         document.getElementById('cc-wma200-foot').textContent = 'Histórico insuficiente para 200 semanas ainda.';
     }
-
 
 
     const monthly = [];
@@ -7932,7 +7977,6 @@ function renderCycleIndicators(closes) {
     } else {
         document.getElementById('cc-rsi-foot').textContent = 'Histórico insuficiente para RSI mensal.';
     }
-
 
 
     let athRunning = closes[0];
@@ -10039,800 +10083,188 @@ function goalRender() {
 // valor bruto, ignorando tudo que já foi vendido/gasto.)
 // ══════════════════════════════════════════════════════════════
 
-let _backupFileData = null; // conteúdo do arquivo de backup carregado
+let _backupFileData = null;
+let _backupFileIsPlainJson = false;
+let _backupImportMode = 'code';
+let _backupExportFormat = 'code';
 
-function openBackupModal() {
-    _backupFileData = null;
-    document.getElementById('bk-export-pass1').value = '';
-    document.getElementById('bk-export-pass2').value = '';
-    document.getElementById('bk-import-pass').value  = '';
-    document.getElementById('bk-export-error').textContent = '';
-    document.getElementById('bk-import-error').textContent = '';
-    document.getElementById('bk-drop-label').textContent   = 'Clique ou arraste o arquivo .btcbak aqui';
-    document.getElementById('bk-strength-row').style.display = 'none';
-    backupShowTab('export');
-    document.getElementById('backup-modal-overlay').classList.remove('hidden');
+// ── Backup independente do Median ───────────────────────────────
+// V2: JSON mínimo → compressão (quando disponível) → AES-256-GCM
+// → código textual. No Android, nenhum download nativo é necessário.
+// O arquivo .btcbak continua sendo usado somente no modo Web/Desktop.
+
+function backupBytesToB64Url(bytes) {
+    let binary = '';
+    const chunk = 0x8000;
+    for (let i = 0; i < bytes.length; i += chunk) binary += String.fromCharCode(...bytes.subarray(i, Math.min(i + chunk, bytes.length)));
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '');
+}
+function backupB64UrlToBytes(str) {
+    const b64 = String(str).replace(/-/g, '+').replace(/_/g, '/');
+    const padded = b64 + '='.repeat((4 - (b64.length % 4)) % 4);
+    const binary = atob(padded); const out = new Uint8Array(binary.length);
+    for (let i=0;i<binary.length;i++) out[i]=binary.charCodeAt(i);
+    return out;
+}
+async function backupCompressBytes(bytes) {
+    if (typeof CompressionStream === 'undefined') return {bytes,compressed:false};
+    try {
+        const cs=new CompressionStream('gzip'), writer=cs.writable.getWriter();
+        await writer.write(bytes); await writer.close();
+        const result=new Uint8Array(await new Response(cs.readable).arrayBuffer());
+        return result.length < bytes.length ? {bytes:result,compressed:true} : {bytes,compressed:false};
+    } catch(e) { addAppLog(`Compressão gzip indisponível: ${e.message}`,'warn'); return {bytes,compressed:false}; }
+}
+async function backupDecompressBytes(bytes, compressed) {
+    if (!compressed) return bytes;
+    if (typeof DecompressionStream === 'undefined') throw new Error('Este navegador não suporta descompressão do backup.');
+    const ds=new DecompressionStream('gzip'), writer=ds.writable.getWriter();
+    await writer.write(bytes); await writer.close();
+    return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+async function backupEncryptBytes(key, plainBytes) {
+    const iv=crypto.getRandomValues(new Uint8Array(12));
+    const ct=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,plainBytes);
+    const out=new Uint8Array(12+ct.byteLength); out.set(iv); out.set(new Uint8Array(ct),12); return out;
+}
+async function backupDecryptBytes(key, encryptedBytes) {
+    if (encryptedBytes.length < 29) throw new Error('Backup inválido.');
+    const iv=encryptedBytes.slice(0,12), ct=encryptedBytes.slice(12);
+    return new Uint8Array(await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct));
+}
+function backupBuildCode(saltBytes, encryptedBytes, compressed) {
+    return `BTCSTACK-BACKUP-V2.${compressed?'c':'n'}.${backupBytesToB64Url(saltBytes)}.${backupBytesToB64Url(encryptedBytes)}`;
+}
+async function backupParseCode(code,password) {
+    const normalized=String(code||'').trim().replace(/\s+/g,'');
+    const parts=normalized.split('.');
+    if(parts.length!==4 || parts[0]!=='BTCSTACK-BACKUP-V2') throw new Error('Código de backup incompatível ou incompleto.');
+    if(parts[1]!=='c' && parts[1]!=='n') throw new Error('Código de backup inválido.');
+    const saltBytes=backupB64UrlToBytes(parts[2]), encryptedBytes=backupB64UrlToBytes(parts[3]);
+    if(saltBytes.length!==32 || encryptedBytes.length<29) throw new Error('Código de backup corrompido.');
+    const saltB64=btoa(String.fromCharCode(...saltBytes));
+    const key=await deriveAesKeyFromPassword(password,saltB64);
+    const packed=await backupDecryptBytes(key,encryptedBytes);
+    const plainBytes=await backupDecompressBytes(packed,parts[1]==='c');
+    const parsed=JSON.parse(new TextDecoder().decode(plainBytes));
+    if(!parsed || parsed.v!==2 || !Array.isArray(parsed.aportes)) throw new Error('Dados de backup inválidos.');
+    return parsed;
 }
 
-function closeBackupModal() {
-    document.getElementById('backup-modal-overlay').classList.add('hidden');
-    _backupFileData = null;
-}
-
-document.getElementById('backup-modal-overlay').addEventListener('click', function(e) {
-    if (e.target === this) closeBackupModal();
-});
-
-function backupShowTab(tab) {
-    const isExport = tab === 'export';
-    document.getElementById('bk-export-section').style.display = isExport ? '' : 'none';
-    document.getElementById('bk-import-section').style.display = isExport ? 'none' : '';
-
-    const btnE = document.getElementById('bktab-export');
-    const btnI = document.getElementById('bktab-import');
-
-    [btnE, btnI].forEach(b => {
-        if (b) { b.style.background = 'transparent'; b.style.color = '#666'; }
-    });
-
-    const activeBtn = isExport ? btnE : btnI;
-    if (activeBtn) {
-        activeBtn.style.background = 'var(--btc-dim)';
-        activeBtn.style.color = 'var(--btc)';
-    }
-}
-
-function backupToggleVis(id) {
-    const inp = document.getElementById(id);
-    inp.type = inp.type === 'password' ? 'text' : 'password';
-}
-
-// ===== SISTEMA DE LOG GERAL DO APP =====
-// Log central da aplicação inteira (não só do backup). Alimenta o recurso
-// "Exportar Log" do menu, usado para diagnosticar erros e bugs.
-// IMPORTANTE: este log é só para diagnóstico técnico (o que a plataforma
-// está fazendo, erros, falhas de rede/download etc). Nunca deve conter
-// dados pessoais do usuário na plataforma (valores, aportes, vendas, saldos,
-// senhas, endereços). As chamadas a addAppLog() já evitam registrar esse
-// tipo de dado (só passam contagens e mensagens técnicas genéricas), e a
-// função abaixo funciona como uma segunda camada de proteção: caso algum
-// texto de erro (inclusive de bibliotecas de terceiros) contenha algo que
-// pareça um valor monetário, endereço Bitcoin, chave ou e-mail, esse trecho
-// é ofuscado antes de entrar no log.
+// ===== LOG TÉCNICO DA APLICAÇÃO =====
 function sanitizeLogText(str) {
-    if (str === null || str === undefined) return '';
-    let s = String(str);
-    s = s.replace(/\bbc1[ac-hj-np-z02-9]{20,90}\b/gi, '[endereço oculto]');       // endereços bech32
-    s = s.replace(/\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g, '[endereço oculto]');   // endereços legacy/P2SH
-    s = s.replace(/\bnsec1[ac-hj-np-z02-9]{20,90}\b/gi, '[chave privada oculta]'); // chave privada nostr, se houver
-    s = s.replace(/\b[0-9a-f]{64}\b/gi, '[chave/hash oculto]');                   // chave privada/hash hex
-    s = s.replace(/R\$\s?\d[\d.,]*\d/gi, '[valor oculto]');                       // valores em reais
-    s = s.replace(/\$\s?\d[\d.,]*\d/g, '[valor oculto]');                         // valores em dólar
-    s = s.replace(/\b\d+\.\d{8}\b/g, '[valor BTC oculto]');                       // BTC com 8 casas decimais
-    s = s.replace(/\b[\w.+-]+@[\w-]+\.[a-z]{2,}\b/gi, '[e-mail oculto]');         // e-mails
+    if(str==null) return '';
+    let s=String(str);
+    s=s.replace(/\bbc1[ac-hj-np-z02-9]{20,90}\b/gi,'[endereço oculto]');
+    s=s.replace(/\b[13][a-km-zA-HJ-NP-Z1-9]{25,34}\b/g,'[endereço oculto]');
+    s=s.replace(/\bnsec1[ac-hj-np-z02-9]{20,90}\b/gi,'[chave privada oculta]');
+    s=s.replace(/\b[0-9a-f]{64}\b/gi,'[chave/hash oculto]');
+    s=s.replace(/R\$\s?\d[\d.,]*\d/gi,'[valor oculto]');
+    s=s.replace(/\$\s?\d[\d.,]*\d/g,'[valor oculto]');
+    s=s.replace(/\b\d+\.\d{8}\b/g,'[valor BTC oculto]');
+    s=s.replace(/[\w.+-]+@[\w-]+\.[a-z]{2,}/gi,'[e-mail oculto]');
     return s;
 }
-
-const _APP_LOG_MAX = 500;
-let _appLogs = [];
-
-function addAppLog(msg, type = 'info') {
-    const safeMsg = sanitizeLogText(msg);
-    const timestamp = new Date().toLocaleTimeString();
-    _appLogs.push({ msg: safeMsg, type, timestamp });
-    if (_appLogs.length > _APP_LOG_MAX) _appLogs.shift();
-
-    // Também registra no console do navegador/WebView
-    console[type === 'error' ? 'error' : type === 'warn' ? 'warn' : 'log'](`[${type.toUpperCase()}] ${safeMsg}`);
+const _APP_LOG_MAX=500; let _appLogs=[];
+function addAppLog(msg,type='info') {
+    const safeType=['success','error','warn','info'].includes(type)?type:'info';
+    const safeMsg=sanitizeLogText(msg); _appLogs.push({msg:safeMsg,type:safeType,timestamp:new Date().toLocaleTimeString('pt-BR')});
+    if(_appLogs.length>_APP_LOG_MAX) _appLogs.shift();
+    try{console[safeType==='error'?'error':safeType==='warn'?'warn':'log'](`[${safeType.toUpperCase()}] ${safeMsg}`);}catch{}
 }
+function getAppLogLines(){return _appLogs.length?_appLogs.map(l=>`[${l.timestamp}] [${l.type.toUpperCase()}] ${l.msg}`):['Nenhum evento registrado nesta sessão.'];}
+function buildAppLogFileContent(){return ['BTC Stack — Log de Diagnóstico',`Gerado em: ${new Date().toLocaleString('pt-BR')}`,`User-Agent: ${sanitizeLogText(navigator.userAgent)}`,'Este arquivo contém apenas eventos técnicos desta sessão.','Não inclui valores de aportes/vendas, saldos, senhas ou endereços.','='.repeat(48),'',...getAppLogLines(),''].join('\n');}
+const APPLOG_ICON_PATHS={success:'<polyline points="20 6 9 17 4 12"/>',error:'<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',warn:'<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',info:'<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'};
+function renderAppLogList(){const el=document.getElementById('applog-list');if(!el)return;el.innerHTML='';const ts=document.getElementById('applog-updated');if(ts)ts.textContent=`Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;if(!_appLogs.length){const e=document.createElement('div');e.className='applog-empty';e.textContent='Nenhum log ainda…';el.appendChild(e);return;} _appLogs.forEach(l=>{const t=APPLOG_ICON_PATHS[l.type]?l.type:'info',r=document.createElement('div');r.className=`applog-entry type-${t}`;r.innerHTML=`<span class="applog-entry-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${APPLOG_ICON_PATHS[t]}</svg></span><span>[${l.timestamp}] ${l.msg}</span>`;el.appendChild(r);});el.scrollTop=el.scrollHeight;}
+function openAppLogViewer(){if(typeof closeDrawer==='function')closeDrawer();renderAppLogList();document.getElementById('applog-modal-overlay')?.classList.remove('hidden');}
+function closeAppLogViewer(){document.getElementById('applog-modal-overlay')?.classList.add('hidden');}
+function refreshAppLogView(){renderAppLogList();showToast('Log atualizado.','info');}
+function copyTextFallback(text,title){let o=document.getElementById('generic-copy-fallback-overlay');if(o)o.remove();o=document.createElement('div');o.id='generic-copy-fallback-overlay';o.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';const b=document.createElement('div');b.style.cssText='background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:16px;max-width:560px;width:100%;max-height:85vh;display:flex;flex-direction:column;gap:10px;';const h=document.createElement('div');h.style.cssText='font-family:var(--font-display);font-weight:700;color:var(--text,#eee);font-size:.95rem;';h.textContent=title||'Copiar conteúdo';const ta=document.createElement('textarea');ta.value=text;ta.readOnly=true;ta.style.cssText='width:100%;min-height:260px;background:#0c0c0c;color:#ccc;border:1px solid var(--border2);border-radius:8px;padding:10px;font-family:monospace;font-size:.72rem;resize:vertical;';const a=document.createElement('div');a.style.cssText='display:flex;gap:8px;';const c=document.createElement('button');c.className='btn-primary';c.textContent='Copiar';c.style.flex='1';const x=document.createElement('button');x.className='btn-secondary';x.textContent='Fechar';x.style.flex='1';c.onclick=async()=>{try{await navigator.clipboard.writeText(text);showToast('✓ Copiado!','success');}catch{ta.focus();ta.select();try{document.execCommand('copy')}catch{}showToast('Selecione e copie manualmente.','info');}};x.onclick=()=>o.remove();a.append(c,x);b.append(h,ta,a);o.appendChild(b);o.addEventListener('click',e=>{if(e.target===o)o.remove()});document.body.appendChild(o);setTimeout(()=>{ta.focus();ta.select();},50);}
+async function copyAppLog(){const text=getAppLogLines().join('\n');try{if(!navigator.clipboard?.writeText)throw 0;await navigator.clipboard.writeText(text);showToast('✓ Log copiado para a área de transferência!','success');}catch{copyTextFallback(text,'Copiar log manualmente');}}
+function clearAppLog(){_appLogs=[];renderAppLogList();showToast('Log limpo.','info');}
+async function exportAppLog(){const content=buildAppLogFileContent(),blob=new Blob([content],{type:'text/plain;charset=utf-8'}),fileName=`btc-stack-log-${todayLocalStr()}.txt`,android=/android/i.test(navigator.userAgent);if(android&&navigator.share){try{const f=new File([blob],fileName,{type:'text/plain'}),d={files:[f],title:'Log do BTC Stack'};if(!navigator.canShare||navigator.canShare(d)){await navigator.share(d);addAppLog('✓ Log compartilhado pela Web Share API.','success');return;}}catch(e){if(e.name==='AbortError')return;addAppLog(`Web Share do log falhou: ${e.message}`,'warn');}}if(!android&&window.showSaveFilePicker){try{const h=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'BTC Stack Log',accept:{'text/plain':['.txt']}}]}),w=await h.createWritable();await w.write(blob);await w.close();addAppLog('✓ Log salvo pelo navegador.','success');showToast('✓ Log exportado!','success');return;}catch(e){if(e.name==='AbortError')return;addAppLog(`Salvar log falhou: ${e.message}`,'warn');}}if(!android){try{const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);addAppLog('✓ Log exportado pelo navegador.','success');showToast('✓ Log exportado!','success');return;}catch(e){addAppLog(`Download do log falhou: ${e.message}`,'warn');}}addAppLog('Android/WebView sem compartilhamento nativo: mostrando log para cópia manual.','info');copyTextFallback(content,`Log do BTC Stack — ${fileName}`);}
+window.addEventListener('error',e=>{try{addAppLog(`Erro: ${e.message||'erro desconhecido'} (${e.filename||'?'}:${e.lineno||0}:${e.colno||0})`,'error')}catch{}});
+window.addEventListener('unhandledrejection',e=>{try{const r=e.reason&&e.reason.message?e.reason.message:String(e.reason);addAppLog(`Promise rejeitada: ${r}`,'error')}catch{}});
 
-function getAppLogLines() {
-    return _appLogs.length
-        ? _appLogs.map(l => `[${l.timestamp}] [${l.type.toUpperCase()}] ${l.msg}`)
-        : ['Nenhum evento registrado nesta sessão.'];
-}
+function backupSetExportFormat(format){_backupExportFormat=format==='json'?'json':'code';const code=_backupExportFormat==='code',cb=document.getElementById('bk-format-code'),jb=document.getElementById('bk-format-json'),fields=document.getElementById('bk-code-export-fields');if(cb){cb.style.borderColor=code?'var(--btc)':'var(--border2)';cb.style.background=code?'var(--btc-dim)':'transparent';}if(jb){jb.style.borderColor=code?'var(--border2)':'var(--btc)';jb.style.background=code?'transparent':'var(--btc-dim)';}if(fields)fields.style.display=code?'':'none';if(!code){document.getElementById('bk-export-pass1').value='';document.getElementById('bk-export-pass2').value='';document.getElementById('bk-strength-row').style.display='none';document.getElementById('bk-code-result').style.display='none';}document.getElementById('bk-json-result').style.display='none';document.getElementById('bk-export-error').textContent='';}
+function backupJsonObject(){return{v:1,app:'btc-stack',exportedAt:Date.now(),encrypted:false,aportes:Array.isArray(aportes)?aportes:[],vendas:Array.isArray(vendas)?vendas:[]};}
+function backupJsonText(){return JSON.stringify(backupJsonObject(),null,2);}
+function backupDownloadText(text,fileName,mime='application/json'){const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
+async function backupCopyJson(){const text=document.getElementById('bk-export-json')?.value||'';if(!text)return;try{await navigator.clipboard.writeText(text);showToast('✓ JSON copiado!','success')}catch{copyTextFallback(text,'Copiar backup JSON');}}
+function backupDownloadJson(){const text=document.getElementById('bk-export-json')?.value||backupJsonText();try{backupDownloadText(text,`btc-stack-${todayLocalStr()}.json`);addAppLog('✓ Backup JSON exportado.','success');showToast('✓ Arquivo JSON preparado para download.','success')}catch(e){addAppLog(`Download do JSON falhou: ${e.message}`,'error');copyTextFallback(text,'Salvar backup JSON manualmente');}}
+function backupStrengthUpdate(){const pw=document.getElementById('bk-export-pass1').value,row=document.getElementById('bk-strength-row');if(!pw){row.style.display='none';return;}row.style.display='flex';const strength=lpassStrength(pw),colors=['#e74c3c','#e67e22','#f1c40f','#2ecc71','#00e87a'],labels=['Muito fraca','Fraca','Razoável','Boa','Forte'];document.getElementById('bk-strength-fill').style.width=(strength*25)+'%';document.getElementById('bk-strength-fill').style.background=colors[strength];document.getElementById('bk-strength-label').textContent=labels[strength];document.getElementById('bk-strength-label').style.color=colors[strength];}
+function backupShowTab(tab){const isExport=tab==='export';document.getElementById('bk-export-section').style.display=isExport?'':'none';document.getElementById('bk-import-section').style.display=isExport?'none':'';const e=document.getElementById('bktab-export'),i=document.getElementById('bktab-import');e.style.background=isExport?'var(--btc-dim)':'transparent';e.style.color=isExport?'var(--btc)':'#666';i.style.background=isExport?'transparent':'var(--btc-dim)';i.style.color=isExport?'#666':'var(--btc)';}
+function backupImportShowMode(mode){_backupImportMode=mode==='file'?'file':'code';if(_backupImportMode==='code')_backupFileIsPlainJson=false;const code=_backupImportMode==='code';document.getElementById('bk-import-code-section').style.display=code?'':'none';document.getElementById('bk-import-file-section').style.display=code?'none':'';const c=document.getElementById('bk-import-code-tab'),f=document.getElementById('bk-import-file-tab');c.style.background=code?'var(--btc-dim)':'transparent';c.style.color=code?'var(--btc)':'#666';f.style.background=code?'transparent':'var(--btc-dim)';f.style.color=code?'#666':'var(--btc)';const p=document.getElementById('bk-import-pass')?.parentElement;if(p&&!(_backupImportMode==='file'&&_backupFileIsPlainJson))p.style.display='';}
+function openBackupModal(){_backupFileData=null;_backupFileIsPlainJson=false;_backupImportMode='code';_backupExportFormat='code';document.getElementById('bk-export-pass1').value='';document.getElementById('bk-export-pass2').value='';document.getElementById('bk-import-pass').value='';document.getElementById('bk-import-code').value='';document.getElementById('bk-export-code').value='';document.getElementById('bk-export-json').value='';document.getElementById('bk-code-result').style.display='none';document.getElementById('bk-json-result').style.display='none';document.getElementById('bk-export-error').textContent='';document.getElementById('bk-import-error').textContent='';document.getElementById('bk-drop-label').textContent='Clique ou arraste o arquivo .btcbak ou .json aqui';document.getElementById('bk-strength-row').style.display='none';document.getElementById('bk-export-btn').textContent='Gerar Backup';const p=document.getElementById('bk-import-pass')?.parentElement;if(p)p.style.display='';backupShowTab('export');backupSetExportFormat('code');document.getElementById('backup-modal-overlay').classList.remove('hidden');}
+function closeBackupModal(){document.getElementById('backup-modal-overlay').classList.add('hidden');_backupFileData=null;_backupFileIsPlainJson=false;}
 
-function buildAppLogFileContent() {
-    const header = [
-        'BTC Stack — Log de Diagnóstico',
-        `Gerado em: ${new Date().toLocaleString()}`,
-        `User-Agent: ${navigator.userAgent}`,
-        'Este arquivo contém apenas eventos técnicos (erros, avisos e status',
-        'de operações) para ajudar a identificar bugs da plataforma. Não inclui',
-        'valores de aportes/vendas, saldos, senhas ou endereços.',
-        '='.repeat(48),
-        ''
-    ];
-    return header.join('\n') + getAppLogLines().join('\n') + '\n';
-}
-
-const APPLOG_ICON_PATHS = {
-    success: '<polyline points="20 6 9 17 4 12"/>',
-    error:   '<line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>',
-    warn:    '<path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
-    info:    '<circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>'
-};
-
-function updateAppLogTimestamp() {
-    const el = document.getElementById('applog-updated');
-    if (el) el.textContent = `Atualizado às ${new Date().toLocaleTimeString('pt-BR')}`;
-}
-
-function renderAppLogList() {
-    const listEl = document.getElementById('applog-list');
-    if (!listEl) return;
-    listEl.innerHTML = '';
-    updateAppLogTimestamp();
-
-    if (!_appLogs.length) {
-        const empty = document.createElement('div');
-        empty.className = 'applog-empty';
-        empty.textContent = 'Nenhum log ainda…';
-        listEl.appendChild(empty);
+document.getElementById('backup-modal-overlay').addEventListener('click',e=>{if(e.target===e.currentTarget)closeBackupModal();});
+async function backupExport(){
+    const err=document.getElementById('bk-export-error'),btn=document.getElementById('bk-export-btn');
+    err.textContent='';
+    if(_backupExportFormat==='json'){
+        try{
+            const text=backupJsonText();
+            document.getElementById('bk-export-json').value=text;
+            document.getElementById('bk-json-size').textContent=`${text.length.toLocaleString('pt-BR')} caracteres`;
+            document.getElementById('bk-json-result').style.display='';
+            btn.textContent='Gerar novo JSON';
+            addAppLog(`Backup JSON gerado (${aportes.length} aportes, ${vendas.length} saídas).`,'success');
+            showToast('✓ Backup JSON criado.','success');
+        }catch(e){err.textContent='Erro ao gerar JSON: '+e.message;addAppLog(`ERRO no backup JSON: ${e.message}`,'error');}
         return;
     }
-
-    _appLogs.forEach(l => {
-        const type = APPLOG_ICON_PATHS[l.type] ? l.type : 'info';
-        const path = APPLOG_ICON_PATHS[type];
-
-        const row = document.createElement('div');
-        row.className = `applog-entry type-${type}`;
-        row.innerHTML =
-            `<span class="applog-entry-icon"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${path}</svg></span>` +
-            `<span>[${l.timestamp}] ${l.msg}</span>`;
-        listEl.appendChild(row);
-    });
-    listEl.scrollTop = listEl.scrollHeight;
+    const pw1=document.getElementById('bk-export-pass1').value,pw2=document.getElementById('bk-export-pass2').value;
+    if(!pw1||pw1.length<6){err.textContent='Senha deve ter no mínimo 6 caracteres.';return;}
+    if(pw1!==pw2){err.textContent='As senhas não coincidem.';return;}
+    try{
+        btn.disabled=true;btn.textContent='Gerando…';
+        addAppLog('Iniciando backup criptografado…','info');
+        const saltBytes=crypto.getRandomValues(new Uint8Array(32));
+        const saltB64=btoa(String.fromCharCode(...saltBytes));
+        const key=await deriveAesKeyFromPassword(pw1,saltB64);
+        const plainText=JSON.stringify({v:2,exportedAt:Date.now(),aportes,vendas});
+        const packed=await backupCompressBytes(new TextEncoder().encode(plainText));
+        const encryptedBytes=await backupEncryptBytes(key,packed.bytes);
+        const code=backupBuildCode(saltBytes,encryptedBytes,packed.compressed);
+        const android=/android/i.test(navigator.userAgent);
+        const wrapped=typeof window.median!=='undefined'||/\bwv\)/.test(navigator.userAgent);
+        if(android||wrapped){
+            document.getElementById('bk-export-code').value=code;
+            document.getElementById('bk-code-size').textContent=`${code.length.toLocaleString('pt-BR')} caracteres`;
+            document.getElementById('bk-code-result').style.display='';
+            btn.textContent='Gerar novo backup';
+            addAppLog(`✓ Backup criptografado gerado (${aportes.length} aportes, ${vendas.length} saídas).`,'success');
+            showToast('✓ Backup criado. Copie o código e guarde a senha.','success');
+            return;
+        }
+        const payload=JSON.stringify({v:2,app:'btc-portfolio',exportedAt:Date.now(),enc:true,cmp:packed.compressed?'gzip':'none',salt:saltB64,data:backupBytesToB64Url(encryptedBytes)});
+        const blob=new Blob([payload],{type:'application/json'});
+        const fileName=`btc-stack-${todayLocalStr()}.btcbak`;
+        if(window.showSaveFilePicker){
+            try{
+                const handle=await window.showSaveFilePicker({suggestedName:fileName,types:[{description:'BTC Stack Backup',accept:{'application/json':['.btcbak']}}]});
+                const writable=await handle.createWritable();await writable.write(blob);await writable.close();
+                addAppLog(`✓ .btcbak salvo pelo navegador: ${fileName}`,'success');showToast('✓ Backup .btcbak salvo!','success');closeBackupModal();return;
+            }catch(e){if(e.name==='AbortError'){btn.disabled=false;btn.textContent='Gerar Backup';return;}addAppLog(`File System Access falhou: ${e.message}`,'warn');}
+        }
+        const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fileName;a.style.display='none';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+        addAppLog(`✓ .btcbak encaminhado ao navegador: ${fileName}`,'success');showToast('✓ Backup .btcbak exportado!','success');closeBackupModal();
+    }catch(e){err.textContent='Erro ao gerar backup: '+e.message;addAppLog(`ERRO no backup criptografado: ${e.message}`,'error');}
+    finally{btn.disabled=false;if(btn.textContent==='Gerando…')btn.textContent='Gerar Backup';}
 }
 
-function refreshAppLogView() {
-    renderAppLogList();
-    showToast('Log atualizado.', 'info');
+async function backupCopyCode() {
+    const code=document.getElementById('bk-export-code')?.value||''; if(!code)return;
+    try{if(!navigator.clipboard?.writeText)throw 0;await navigator.clipboard.writeText(code);showToast('✓ Código copiado!','success');addAppLog('Código de backup copiado para a área de transferência.','info');}
+    catch{copyTextFallback(code,'Copiar código de backup');}
 }
 
-function openAppLogViewer() {
-    closeDrawer();
-    renderAppLogList();
-    document.getElementById('applog-modal-overlay').classList.remove('hidden');
-}
-
-function closeAppLogViewer() {
-    document.getElementById('applog-modal-overlay').classList.add('hidden');
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const overlay = document.getElementById('applog-modal-overlay');
-    if (overlay) {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === this) closeAppLogViewer();
-        });
-    }
-});
-
-function copyAppLog() {
-    const text = getAppLogLines().join('\n');
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(() => {
-            showToast('✓ Log copiado para a área de transferência!', 'success');
-        }).catch(() => {
-            copyAppLogFallback(text);
-        });
-    } else {
-        copyAppLogFallback(text);
-    }
-}
-
-// Fallback para quando a Clipboard API falha ou não existe — comum em
-// WebViews empacotadas (Median.co), que nem sempre implementam
-// navigator.clipboard.writeText mesmo com HTTPS. Tenta o método legado
-// document.execCommand('copy') automaticamente e, se isso também falhar,
-// deixa o texto numa caixa selecionável pra cópia manual (toque e segure),
-// já que nenhuma API pode ser forçada a funcionar a partir daqui.
-function copyAppLogFallback(text) {
-    let overlay = document.getElementById('applog-copy-fallback-overlay');
-    if (overlay) overlay.remove();
-
-    overlay = document.createElement('div');
-    overlay.id = 'applog-copy-fallback-overlay';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:99999;display:flex;align-items:center;justify-content:center;padding:20px;';
-
-    const box = document.createElement('div');
-    box.style.cssText = 'background:var(--surface2);border:1px solid var(--border2);border-radius:14px;padding:16px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column;gap:10px;';
-
-    const title = document.createElement('div');
-    title.style.cssText = 'font-family:var(--font-display);font-weight:700;font-size:.95rem;color:var(--text,#eee);';
-    title.textContent = 'Copiar manualmente';
-
-    const hint = document.createElement('div');
-    hint.style.cssText = 'font-family:var(--font-display);font-size:.78rem;color:#999;line-height:1.4;';
-    hint.textContent = 'Não foi possível copiar automaticamente. Toque e segure no texto abaixo, selecione tudo e copie.';
-
-    const textarea = document.createElement('textarea');
-    textarea.value = text;
-    textarea.readOnly = true;
-    textarea.style.cssText = 'flex:1;min-height:220px;background:#0c0c0c;color:#ccc;border:1px solid var(--border2);border-radius:8px;padding:10px;font-family:monospace;font-size:.72rem;resize:none;';
-
-    const closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Fechar';
-    closeBtn.style.cssText = 'align-self:flex-end;padding:8px 18px;border-radius:8px;border:none;background:var(--btc);color:#000;font-weight:700;cursor:pointer;font-family:var(--font-display);';
-    closeBtn.onclick = () => overlay.remove();
-
-    box.appendChild(title);
-    box.appendChild(hint);
-    box.appendChild(textarea);
-    box.appendChild(closeBtn);
-    overlay.appendChild(box);
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-
-    setTimeout(() => {
-        textarea.focus();
-        textarea.select();
-        // Tenta o método legado como segunda tentativa automática — ainda
-        // funciona em algumas WebViews mesmo quando a Clipboard API moderna
-        // falha silenciosamente.
-        try {
-            if (document.execCommand('copy')) {
-                showToast('✓ Log copiado (método alternativo)!', 'success');
-            }
-        } catch (e) { /* segue mostrando a caixa pra cópia manual */ }
-    }, 50);
-}
-
-function clearAppLog() {
-    _appLogs = [];
-    renderAppLogList();
-    showToast('Log limpo.', 'info');
-}
-
-// Captura automaticamente erros não tratados e promises rejeitadas, para que
-// o log reflita o que a plataforma está realmente fazendo.
-window.addEventListener('error', function(e) {
-    addAppLog(`Erro: ${e.message} (${e.filename || '?'}:${e.lineno || 0}:${e.colno || 0})`, 'error');
-});
-window.addEventListener('unhandledrejection', function(e) {
-    const reason = e.reason && e.reason.message ? e.reason.message : String(e.reason);
-    addAppLog(`Promise rejeitada: ${reason}`, 'error');
-});
-
-async function exportAppLog() {
-    const content = buildAppLogFileContent();
-    const blob = new Blob([content], { type: 'text/plain' });
-    const fileName = `btc-stack-log-${todayLocalStr()}.txt`;
-    const isAndroidApp = /android/i.test(navigator.userAgent);
-
-    let downloadSuccess = false;
-
-    // Método 0: ponte nativa Median, quando o wrapper disponibiliza shareFile.
-    addAppLog(`Ponte Median shareFile disponível: ${typeof (window.median?.share?.shareFile) === 'function'}`, 'info');
-    if (isAndroidApp && !downloadSuccess) {
-        try {
-            const nativeOk = await tryMedianNativeFileShare(blob, fileName, 'Log BTC Stack');
-            if (nativeOk) {
-                downloadSuccess = true;
-                addAppLog('✓ Exportação de log via ponte nativa Median acionada!', 'success');
-            }
-        } catch (nativeErr) {
-            addAppLog(`Ponte nativa Median falhou: ${nativeErr.message || nativeErr}`, 'warn');
-        }
-    }
-
-    // Método 1: Web Share API com arquivo — abre o menu NATIVO de
-    // compartilhamento do Android/iOS (Arquivos, Google Drive, WhatsApp,
-    // e-mail, Bluetooth etc). Testado antes do Service Worker porque os
-    // logs mostraram que o interceptador nativo de download do Median não
-    // reconhece respostas sintetizadas pelo Service Worker (só respostas de
-    // rede reais) — então esse é o método com chance real de mostrar algo
-    // visível na tela.
-    addAppLog(`navigator.share disponível: ${!!(window.navigator && navigator.share)}`, 'info');
-    if (window.navigator && navigator.share) {
-        try {
-            const file = new File([blob], fileName, { type: 'text/plain' });
-            const shareData = { files: [file], title: 'Log do BTC Stack' };
-            if (!navigator.canShare || navigator.canShare(shareData)) {
-                await navigator.share(shareData);
-                downloadSuccess = true;
-                addAppLog('✓ Exportação de log — Web Share (arquivo) funcionou!', 'success');
-            } else {
-                addAppLog('Exportação de log — dispositivo não aceita compartilhar arquivos, tentando outro método…', 'warn');
-            }
-        } catch (shareErr) {
-            if (shareErr.name === 'AbortError') {
-                addAppLog('Exportação de log cancelada pelo usuário', 'warn');
-                renderAppLogList();
-                return;
-            }
-            addAppLog(`Exportação de log — Web Share falhou: ${shareErr.message}`, 'warn');
-        }
-    }
-
-    // Método 1: Service Worker + Content-Disposition — mantido como reserva
-    // (funciona em navegadores normais, mas os testes mostraram que o
-    // wrapper Median não entrega esse tipo de resposta pro gerenciador
-    // nativo de downloads).
-    if (!downloadSuccess) {
-        try {
-            const swOk = await trySwNativeDownload(blob, fileName);
-            if (swOk) {
-                downloadSuccess = true;
-                addAppLog('✓ Exportação de log — Service Worker acionado; aguardando gerenciador nativo…', 'success');
-            }
-        } catch (swErr) {
-            addAppLog(`Exportação de log — Service Worker + Content-Disposition falhou: ${swErr.message}`, 'warn');
-        }
-    }
-
-    // Método 2: File System Access API (Desktop) — mesmo método usado no
-    // export de backup, dá ao usuário a opção de escolher onde salvar.
-    if (!downloadSuccess && window.showSaveFilePicker && !isAndroidApp) {
-        try {
-            const fileHandle = await window.showSaveFilePicker({
-                suggestedName: fileName,
-                types: [{ description: 'BTC Stack Log', accept: { 'text/plain': ['.txt'] } }],
-            });
-            const writable = await fileHandle.createWritable();
-            await writable.write(blob);
-            await writable.close();
-            downloadSuccess = true;
-            addAppLog('✓ Exportação de log — File System Access API funcionou!', 'success');
-        } catch (pickerErr) {
-            if (pickerErr.name === 'AbortError') {
-                addAppLog('Exportação de log cancelada pelo usuário', 'warn');
-                renderAppLogList();
-                return;
-            }
-            addAppLog(`Exportação de log — File System Access falhou: ${pickerErr.message}`, 'warn');
-        }
-    }
-
-    // Método 3: Blob URL + <a> (funciona na maioria dos navegadores/WebViews)
-    if (!downloadSuccess) {
-        try {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = fileName;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
-                try {
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                } catch (e) {}
-            }, 500);
-            downloadSuccess = true;
-            addAppLog('✓ Exportação de log — Blob URL funcionou!', 'success');
-        } catch (blobErr) {
-            addAppLog(`Exportação de log — Blob URL falhou: ${blobErr.message}`, 'warn');
-        }
-    }
-
-    // Método 4: Data URL + iframe (fallback para WebViews restritivas, ex: Android)
-    if (!downloadSuccess) {
-        try {
-            const reader = new FileReader();
-            reader.onerror = () => {
-                addAppLog(`Exportação de log — Data URL falhou: ${reader.error && reader.error.message}`, 'warn');
-            };
-            reader.onload = () => {
-                const iframe = document.createElement('iframe');
-                iframe.style.display = 'none';
-                iframe.src = reader.result;
-                iframe.download = fileName;
-                document.body.appendChild(iframe);
-                addAppLog('✓ Exportação de log — Data URL + iframe funcionou!', 'success');
-                setTimeout(() => {
-                    try { document.body.removeChild(iframe); } catch (e) {}
-                }, 1000);
-            };
-            reader.readAsDataURL(blob);
-            downloadSuccess = true;
-        } catch (iframeErr) {
-            addAppLog(`Exportação de log — Data URL falhou: ${iframeErr.message}`, 'warn');
-        }
-    }
-
-    // Método 5: window.open com Data URL (último recurso para WebView, igual ao backup)
-    if (!downloadSuccess) {
-        try {
-            const reader = new FileReader();
-            reader.onerror = () => {
-                addAppLog(`Exportação de log — window.open falhou: ${reader.error && reader.error.message}`, 'error');
-            };
-            reader.onload = () => {
-                window.open(reader.result, '_blank');
-                addAppLog('✓ Exportação de log — window.open acionado (verifique abas/downloads)', 'success');
-            };
-            reader.readAsDataURL(blob);
-            downloadSuccess = true;
-        } catch (openErr) {
-            addAppLog(`Exportação de log — window.open falhou: ${openErr.message}`, 'error');
-        }
-    }
-
-    if (downloadSuccess) {
-        addAppLog('Log exportado pelo usuário.', 'info');
-        showToast('✓ Log exportado!', 'success');
-    } else {
-        addAppLog('⚠️ Nenhum método de exportação de log funcionou.', 'error');
-        showToast('Não foi possível exportar o log. Verifique permissões.', 'error');
-    }
-    renderAppLogList();
-}
-
-// ── Download nativo via Service Worker (Content-Disposition) ──
-// Guarda o arquivo no Service Worker (ver sw.js) e navega para uma URL
-// /__dl__/<token>/<nome> que ele responde com um header
-// Content-Disposition real. É o formato que o Median.co documenta
-// como reconhecido pelo interceptador nativo de downloads — abrindo
-// a tela do sistema para escolher a pasta e concedendo a permissão
-// de armazenamento nela, mesmo sendo um arquivo gerado localmente
-// (sem precisar estar hospedado publicamente).
-// Retorna true só se conseguiu entregar o arquivo ao SW e disparar a
-// navegação; não há como confirmar que o usuário concluiu o salvamento
-// a partir daqui (o sistema assume esse controle).
-/**
- * Exportação por ponte nativa do Median, quando o wrapper disponibiliza
- * shareFile. Alguns builds Android não expõem navigator.share, mas expõem
- * a ponte JavaScript do app. O arquivo é entregue como data: URL para não
- * depender de Blob URLs ou de uma requisição externa.
- */
-async function tryMedianNativeFileShare(blob, fileName, title) {
-    const median = window.median;
-    const share = median && median.share;
-    if (!share) return false;
-
-    const dataUrl = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onerror = () => reject(reader.error || new Error('Falha ao converter arquivo'));
-        reader.onload = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-    });
-
-    const payload = {
-        url: dataUrl,
-        filename: fileName,
-        fileName: fileName,
-        title: title || fileName,
-        mimeType: blob.type || 'application/octet-stream',
-        mime: blob.type || 'application/octet-stream'
-    };
-
-    // Compatibilidade com builds que expõem a operação com nomes diferentes.
-    const candidates = [
-        ['median.share.file', share.file],
-        ['median.share.shareFile', share.shareFile]
-    ];
-
-    for (const [name, fn] of candidates) {
-        if (typeof fn !== 'function') continue;
-        const variants = [
-            payload,
-            { data: dataUrl, filename: fileName, fileName, title: title || fileName, mimeType: payload.mimeType, mime: payload.mimeType },
-            dataUrl
-        ];
-        for (let i = 0; i < variants.length; i++) {
-            try {
-                addAppLog(`Tentando ponte nativa: ${name} (formato ${i + 1})…`, 'info');
-                await Promise.resolve(fn.call(share, variants[i]));
-                addAppLog(`✓ Ponte nativa ${name} acionada.`, 'success');
-                return true;
-            } catch (e) {
-                if (i === variants.length - 1) addAppLog(`${name} falhou: ${e?.message || e}`, 'warn');
-            }
-        }
-    }
-    return false;
-}
-
-async function tryWebShareFile(blob, fileName, title) {
-    if (!navigator.share || typeof File === 'undefined') return false;
-    try {
-        const file = new File([blob], fileName, {
-            type: blob.type || 'application/octet-stream',
-            lastModified: Date.now()
-        });
-        const shareData = { files: [file], title: title || fileName };
-        if (typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] })) {
-            return false;
-        }
-        await navigator.share(shareData);
-        return true;
-    } catch (e) {
-        if (e?.name === 'AbortError') addAppLog('Compartilhamento cancelado pelo usuário.', 'info');
-        else addAppLog(`Web Share API falhou: ${e?.message || e}`, 'warn');
-        return false;
-    }
-}
-
-async function trySwNativeDownload(blob, fileName) {
-    if (!('serviceWorker' in navigator)) return false;
-
-    // Garante que estamos usando um Service Worker que realmente controla
-    // esta página. Se a instalação acabou de acontecer, tenta atualizar/
-    // assumir o controle antes de desistir.
-    let controller = navigator.serviceWorker.controller;
-    if (!controller) {
-        try {
-            const registration = await navigator.serviceWorker.getRegistration();
-            if (registration) {
-                await registration.update().catch(() => {});
-                if (registration.active && !navigator.serviceWorker.controller) {
-                    registration.active.postMessage({ type: 'CLAIM_CLIENT' });
-                }
-            }
-        } catch (e) {}
-        controller = navigator.serviceWorker.controller;
-    }
-    if (!controller) return false;
-
-    let registration;
-    try { registration = await navigator.serviceWorker.getRegistration(); } catch (e) {}
-    const buffer = await blob.arrayBuffer();
-    const token = 'dl' + Date.now().toString(36) + Math.random().toString(36).slice(2);
-
-    const stored = await new Promise((resolve) => {
-        const channel = new MessageChannel();
-        const timeout = setTimeout(() => resolve(false), 2500);
-        channel.port1.onmessage = (e) => {
-            clearTimeout(timeout);
-            resolve(!!(e.data && e.data.ok));
-        };
-        try {
-            controller.postMessage(
-                {
-                    type: 'STORE_BLOB_FOR_DOWNLOAD',
-                    token,
-                    fileName,
-                    mimeType: blob.type || 'application/octet-stream',
-                    buffer
-                },
-                [buffer, channel.port2]
-            );
-        } catch (e) {
-            clearTimeout(timeout);
-            resolve(false);
-        }
-    });
-    if (!stored) return false;
-
-    const base = (registration && registration.scope) ||
-        (location.origin + location.pathname.replace(/[^/]*$/, ''));
-    const dlUrl = base.replace(/\/?$/, '/') +
-        '__dl__/' + token + '/' + encodeURIComponent(fileName);
-
-    // Em WebViews Android, o atributo download em uma URL controlada por SW
-    // pode impedir que o WebView trate a navegação como um download nativo.
-    // Fazemos uma navegação de nível superior. O SW devolve
-    // Content-Disposition: attachment, permitindo ao gerenciador nativo do
-    // wrapper/Android interceptar a resposta.
-    const a = document.createElement('a');
-    a.href = dlUrl;
-    a.target = '_self';
-    a.rel = 'noopener';
-    a.style.display = 'none';
-    document.body.appendChild(a);
-
-    // Não informa "sucesso do download" aqui. O chamador só deve considerar
-    // este método como acionado; se o WebView não possuir interceptador
-    // nativo, a página pode sair da navegação. Isso é preferível a declarar
-    // falsamente que o arquivo foi salvo.
-    a.click();
-
-    setTimeout(() => {
-        try { document.body.removeChild(a); } catch (e) {}
-    }, 5000);
-
-    return true;
-}
-
-function backupStrengthUpdate() {
-    const pw  = document.getElementById('bk-export-pass1').value;
-    const row = document.getElementById('bk-strength-row');
-    if (!pw) { row.style.display = 'none'; return; }
-    row.style.display = 'flex';
-    const s = lpassStrength(pw);
-    const colors = ['#e74c3c','#e67e22','#f1c40f','#2ecc71','#00e87a'];
-    const labels = ['Muito fraca','Fraca','Razoável','Boa','Forte'];
-    document.getElementById('bk-strength-fill').style.width      = (s*25)+'%';
-    document.getElementById('bk-strength-fill').style.background = colors[s];
-    document.getElementById('bk-strength-label').textContent     = labels[s];
-    document.getElementById('bk-strength-label').style.color     = colors[s];
-}
-
-async function backupExport() {
-    const pw1 = document.getElementById('bk-export-pass1').value;
-    const pw2 = document.getElementById('bk-export-pass2').value;
-    const err = document.getElementById('bk-export-error');
-    err.textContent = '';
-
-    if (!pw1 || pw1.length < 6) { err.textContent = 'Senha deve ter no mínimo 6 caracteres.'; addAppLog('Senha inválida (< 6 caracteres)', 'error'); return; }
-    if (pw1 !== pw2) { err.textContent = 'As senhas não coincidem.'; addAppLog('Senhas não coincidem', 'error'); return; }
-
-    try {
-        addAppLog('Iniciando exportação de backup…', 'info');
-        
-        // Deriva chave temporária só para o backup (salt novo a cada export)
-        const saltBytes = crypto.getRandomValues(new Uint8Array(32));
-        const saltB64   = btoa(String.fromCharCode(...saltBytes));
-        const key       = await deriveAesKeyFromPassword(pw1, saltB64);
-        addAppLog('Chave derivada com sucesso (PBKDF2)', 'success');
-
-        const plain   = JSON.stringify({ aportes, vendas, exportedAt: Date.now(), v: 1 });
-        const cipher  = await aesGcmEncrypt(key, plain);
-        addAppLog(`Dados criptografados (${aportes.length} aportes, ${vendas.length} saídas)`, 'success');
-
-        const payload = JSON.stringify({
-            v: 1,
-            app: 'btc-portfolio',
-            exportedAt: Date.now(),
-            enc: true,
-            salt: saltB64,
-            data: cipher,
-        });
-
-        const blob     = new Blob([payload], { type: 'application/json' });
-        const date     = todayLocalStr();
-        const fileName = `btc-stack-${date}.btcbak`;
-        
-        addAppLog(`Arquivo: ${fileName} (${(blob.size / 1024).toFixed(1)} KB)`, 'info');
-
-        const isAndroidApp = /android/i.test(navigator.userAgent);
-        if (isAndroidApp) {
-            addAppLog('Plataforma: Android (pula File System Access API)', 'info');
-        } else {
-            addAppLog('Plataforma: Desktop/Web', 'info');
-        }
-        
-        let downloadSuccess = false;
-
-        // Android/Median: tenta primeiro a ponte nativa de arquivo.
-        // Se o build do Median não expuser essa ponte, passa para Web Share.
-        if (isAndroidApp) {
-            const shareObj = window.median?.share;
-            addAppLog(`Median share.file disponível: ${typeof shareObj?.file === 'function'}`, 'info');
-            addAppLog(`Median share.shareFile disponível: ${typeof shareObj?.shareFile === 'function'}`, 'info');
-            try {
-                downloadSuccess = await tryMedianNativeFileShare(blob, fileName, 'Backup BTC Stack');
-            } catch (e) {
-                addAppLog(`Ponte nativa não disponível: ${e?.message || e}`, 'warn');
-            }
-        }
-
-        // Web Share abre a folha nativa do Android quando o WebView a expõe.
-        if (!downloadSuccess && navigator.share) {
-            addAppLog('Tentando: Web Share API com arquivo…', 'info');
-            downloadSuccess = await tryWebShareFile(blob, fileName, 'Backup BTC Stack');
-            if (downloadSuccess) addAppLog('✓ Web Share API acionada.', 'success');
-        }
-
-        // Fallback para o mecanismo de download já existente.
-        if (!downloadSuccess) {
-            try {
-                addAppLog('Tentando: Service Worker + Content-Disposition…', 'info');
-                const swOk = await trySwNativeDownload(blob, fileName);
-                if (swOk) {
-                    downloadSuccess = true;
-                    addAppLog('✓ Download encaminhado ao navegador/WebView.', 'success');
-                }
-            } catch (swErr) {
-                addAppLog(`Service Worker falhou: ${swErr?.message || swErr}`, 'warn');
-            }
-        }
-
-        if (!downloadSuccess && window.showSaveFilePicker && !isAndroidApp) {
-            try {
-                addAppLog('Tentando: File System Access API…', 'info');
-                const fileHandle = await window.showSaveFilePicker({
-                    suggestedName: fileName,
-                    types: [{ description: 'BTC Stack Backup', accept: { 'application/json': ['.btcbak'] } }],
-                });
-                const writable = await fileHandle.createWritable();
-                await writable.write(blob);
-                await writable.close();
-                downloadSuccess = true;
-                addAppLog('✓ File System Access API funcionou!', 'success');
-            } catch (pickerErr) {
-                if (pickerErr.name === 'AbortError') {
-                    addAppLog('Cancelado pelo usuário', 'warn');
-                    return;
-                }
-                addAppLog(`File System Access falhou: ${pickerErr.message}`, 'warn');
-            }
-        }
-
-        // Método 4: Blob URL com <a> tag (mais comum)
-        if (!downloadSuccess) {
-            try {
-                addAppLog('Tentando: Blob URL + <a> tag…', 'info');
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = fileName;
-                a.style.display = 'none';
-                document.body.appendChild(a);
-                a.click();
-                
-                // Garante limpeza
-                setTimeout(() => {
-                    try {
-                        document.body.removeChild(a);
-                        URL.revokeObjectURL(url);
-                    } catch(e) {}
-                }, 500);
-                
-                downloadSuccess = true;
-                addAppLog('✓ Blob URL funcionou!', 'success');
-            } catch (blobErr) {
-                addAppLog(`Blob URL falhou: ${blobErr.message}`, 'warn');
-            }
-        }
-
-        // Método 5: Data URL com iframe (WebView Android compatível)
-        if (!downloadSuccess) {
-            try {
-                addAppLog('Tentando: Data URL + iframe…', 'info');
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const dataUrl = reader.result;
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    iframe.src = dataUrl;
-                    iframe.download = fileName;
-                    document.body.appendChild(iframe);
-                    addAppLog('✓ Data URL + iframe funcionou!', 'success');
-                    
-                    setTimeout(() => {
-                        try {
-                            document.body.removeChild(iframe);
-                        } catch(e) {}
-                    }, 1000);
-                };
-                reader.readAsDataURL(blob);
-                downloadSuccess = true;
-            } catch (iframeErr) {
-                addAppLog(`Data URL falhou: ${iframeErr.message}`, 'warn');
-            }
-        }
-
-        // Método 6: Window.open com Data URL (último recurso para WebView)
-        if (!downloadSuccess) {
-            try {
-                addAppLog('Tentando: window.open (último recurso)…', 'info');
-                const reader = new FileReader();
-                reader.onload = () => {
-                    const dataUrl = reader.result;
-                    window.open(dataUrl, '_blank');
-                    addAppLog('✓ window.open acionado (verifique abas/downloads)', 'success');
-                };
-                reader.readAsDataURL(blob);
-                downloadSuccess = true;
-            } catch (openErr) {
-                addAppLog(`window.open falhou: ${openErr.message}`, 'error');
-            }
-        }
-
-        if (!downloadSuccess) {
-            addAppLog('⚠️ Nenhum método de exportação conseguiu entregar o arquivo.', 'error');
-            err.textContent = 'Não foi possível abrir o compartilhamento/Download no Android. Verifique o suporte nativo do Median.';
-        } else {
-            addAppLog('✓ Arquivo entregue ao mecanismo de compartilhamento/download.', 'success');
-        }
-
-        closeBackupModal();
-        const vendasSuffix = vendas.length > 0 ? ` e ${vendas.length} saída(s)` : '';
-        const toastMsg = isAndroidApp
-            ? `✓ Backup preparado: conclua o salvamento na janela do Android.`
-            : `✓ Backup exportado com ${aportes.length} aporte(s)${vendasSuffix}!`;
-
-        showToast(toastMsg, 'success');
-        
-    } catch(e) {
-        err.textContent = 'Erro ao exportar: ' + e.message;
-        addAppLog(`ERRO: ${e.message}`, 'error');
-    }
+function backupSelectCode() {
+    const el = document.getElementById('bk-export-code');
+    el.focus();
+    el.select();
+    try { el.setSelectionRange(0, el.value.length); } catch (e) {}
 }
 
 function backupHandleDrop(event) {
@@ -10848,47 +10280,58 @@ function backupFileSelected(input) {
 }
 
 function backupLoadFile(file) {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            _backupFileData = JSON.parse(e.target.result);
-            document.getElementById('bk-drop-label').textContent = '✓ ' + file.name + ' carregado';
-            document.getElementById('bk-import-error').textContent = '';
-        } catch {
-            document.getElementById('bk-import-error').textContent = 'Arquivo inválido ou corrompido.';
-            _backupFileData = null;
-        }
-    };
+    const reader=new FileReader();
+    reader.onload=e=>{try{const parsed=JSON.parse(e.target.result);_backupFileData=parsed;_backupFileIsPlainJson=!!(parsed&&parsed.app==='btc-stack'&&parsed.encrypted===false&&Array.isArray(parsed.aportes));document.getElementById('bk-drop-label').textContent='✓ '+file.name+(_backupFileIsPlainJson?' (JSON sem criptografia)':'');document.getElementById('bk-import-error').textContent='';const p=document.getElementById('bk-import-pass')?.parentElement;if(p)p.style.display=_backupFileIsPlainJson?'none':'';}catch{document.getElementById('bk-import-error').textContent='Arquivo inválido ou corrompido.';_backupFileData=null;_backupFileIsPlainJson=false;}};
     reader.readAsText(file);
 }
 
 async function backupImport() {
-    const pw  = document.getElementById('bk-import-pass').value;
+    const pw = document.getElementById('bk-import-pass').value;
     const err = document.getElementById('bk-import-error');
     err.textContent = '';
 
-    if (!_backupFileData) { err.textContent = 'Selecione um arquivo de backup primeiro.'; return; }
-    if (!pw)              { err.textContent = 'Digite a senha do backup.'; return; }
-
-    const bk = _backupFileData;
-    if (bk.app !== 'btc-portfolio' || bk.v !== 1) {
-        err.textContent = 'Arquivo de backup incompatível.'; return;
-    }
-    if (!bk.enc || !bk.salt || !bk.data) {
-        err.textContent = 'Formato de backup inválido.'; return;
-    }
+    if ((_backupImportMode === 'code' || !_backupFileIsPlainJson) && !pw) { err.textContent = 'Digite a senha do backup.'; return; }
 
     try {
-        const key     = await deriveAesKeyFromPassword(pw, bk.salt);
-        const plain   = await aesGcmDecrypt(key, bk.data);
-        const parsed  = JSON.parse(plain);
+        let parsed;
 
-        if (!Array.isArray(parsed.aportes)) { err.textContent = 'Dados corrompidos no backup.'; return; }
+        if (_backupImportMode === 'code') {
+            const code = document.getElementById('bk-import-code').value.trim();
+            if (!code) { err.textContent = 'Cole o código de backup primeiro.'; return; }
+            addAppLog('Iniciando importação do código de backup V2…', 'info');
+            parsed = await backupParseCode(code, pw);
+        } else {
+            if (!_backupFileData) { err.textContent = 'Selecione um arquivo de backup primeiro.'; return; }
+            const bk = _backupFileData;
+            if (_backupFileIsPlainJson) {
+                parsed = bk;
+            } else if (bk.app === 'btc-portfolio' && bk.v === 1 && bk.enc && bk.salt && bk.data) {
+                const key=await deriveAesKeyFromPassword(pw,bk.salt);
+                parsed=JSON.parse(await aesGcmDecrypt(key,bk.data));
+            } else if (bk.app === 'btc-portfolio' && bk.v === 2 && bk.enc && bk.salt && bk.data) {
+                const saltBytes=backupB64UrlToBytes(String(bk.salt).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/g,''));
+                if(saltBytes.length!==32) throw new Error('Salt do backup inválido.');
+                const saltB64=btoa(String.fromCharCode(...saltBytes));
+                const key=await deriveAesKeyFromPassword(pw,saltB64);
+                const encryptedBytes=backupB64UrlToBytes(bk.data);
+                const packed=await backupDecryptBytes(key,encryptedBytes);
+                const plainBytes=await backupDecompressBytes(packed,bk.cmp==='gzip');
+                parsed=JSON.parse(new TextDecoder().decode(plainBytes));
+            } else {
+                err.textContent='Arquivo de backup incompatível.'; return;
+            }
+        }
+
+        if (!Array.isArray(parsed.aportes)) {
+            err.textContent = 'Dados corrompidos no backup.';
+            return;
+        }
 
         const validados = validateAportesArray(parsed.aportes);
-        if (!validados || validados.length === 0) { err.textContent = 'Nenhum aporte válido encontrado no backup.'; return; }
-        // vendas/gastos são opcionais no backup (compatibilidade com backups
-        // exportados antes dessa correção, que só continham aportes)
+        if (!validados || validados.length === 0) {
+            err.textContent = 'Nenhum aporte válido encontrado no backup.';
+            return;
+        }
         const validadosVendas = validateVendasArray(parsed.vendas);
 
         const hasLocal = aportes.length > 0 || vendas.length > 0;
@@ -10898,16 +10341,16 @@ async function backupImport() {
                 'Importar Backup',
                 safeConfirmBody([
                     { label: 'Aportes no backup', value: validados.length },
-                    { label: 'Saídas no backup',  value: validadosVendas.length },
-                    { label: 'Aportes locais',    value: aportes.length },
-                    { label: 'Saídas locais',     value: vendas.length },
+                    { label: 'Saídas no backup', value: validadosVendas.length },
+                    { label: 'Aportes locais', value: aportes.length },
+                    { label: 'Saídas locais', value: vendas.length },
                     { br: true },
                     { text: 'Deseja substituir os dados locais ou mesclar?' },
                 ]),
                 [
-                    { label: 'Cancelar',    cls: 'confirm-btn-cancel', value: 'cancel'  },
-                    { label: 'Mesclar',  cls: 'confirm-btn-merge',  value: 'merge'   },
-                    { label: 'Substituir',cls: 'confirm-btn-ok',     value: 'replace' },
+                    { label: 'Cancelar', cls: 'confirm-btn-cancel', value: 'cancel' },
+                    { label: 'Mesclar', cls: 'confirm-btn-merge', value: 'merge' },
+                    { label: 'Substituir', cls: 'confirm-btn-ok', value: 'replace' },
                 ]
             );
         }
@@ -10916,9 +10359,8 @@ async function backupImport() {
 
         if (answer === 'replace') {
             aportes = validados;
-            vendas  = validadosVendas;
+            vendas = validadosVendas;
         } else {
-            // Merge: union by ID
             const localIds = new Set(aportes.map(a => String(a.id)));
             let added = 0;
             for (const a of validados) {
@@ -10942,16 +10384,20 @@ async function backupImport() {
         renderPortfolio();
         if (typeof renderVendas === 'function') renderVendas();
         closeBackupModal();
+
         if (answer === 'replace') {
             const vendasSuffix = validadosVendas.length > 0 ? ` e ${validadosVendas.length} saída(s)` : '';
             showToast(`✓ ${validados.length} aporte(s)${vendasSuffix} importados com sucesso!`, 'success');
         }
-    } catch(e) {
-        if (e.name === 'OperationError' || e.message?.includes('decrypt')) {
-            err.textContent = 'Senha incorreta ou arquivo corrompido.';
+        addAppLog(`✓ Backup importado: ${validados.length} aportes, ${validadosVendas.length} saídas.`, 'success');
+    } catch (e) {
+        const msg = String(e && e.message || e);
+        if (e.name === 'OperationError' || /decrypt|operation/i.test(msg)) {
+            err.textContent = 'Senha incorreta ou código/arquivo corrompido.';
         } else {
-            err.textContent = 'Erro ao importar: ' + e.message;
+            err.textContent = msg || 'Erro ao importar o backup.';
         }
+        addAppLog(`ERRO na importação do backup: ${msg}`, 'error');
     }
 }
 
